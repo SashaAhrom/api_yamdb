@@ -8,7 +8,7 @@ from .models import User
 
 class AdminSerializer(serializers.ModelSerializer):
     """Serializer for admin users for UserViewSet."""
-    
+
     username = serializers.RegexField(
         regex=r'^[\w.@+-]+',
         validators=[UniqueValidator(queryset=User.objects.all())],
@@ -27,6 +27,7 @@ class AdminSerializer(serializers.ModelSerializer):
         )
 
     def validate_username(self, username):
+        """Checks if given username is forbidden for registration."""
         if username == 'me':
             raise serializers.ValidationError(
                 'Данное имя пользователя недопустимо.'
@@ -45,7 +46,7 @@ class UserSerializer(AdminSerializer):
 
 class ConfirmationCodeSerializer(serializers.Serializer):
     """Serializer for handling user signup."""
-    
+
     email = serializers.EmailField(
         validators=[UniqueValidator(queryset=User.objects.all())],
     )
@@ -66,6 +67,7 @@ class ConfirmationCodeSerializer(serializers.Serializer):
 
 class ValidationError404(APIException):
     """Custom error for returning NOT_FOUND response."""
+
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = 'Пользователя с такими данными не найдено!'
 
@@ -86,7 +88,6 @@ class JwtTokenSerializer(serializers.Serializer):
                 raise ValidationError404(detail=error.detail)
             raise serializers.ValidationError(detail=error.detail)
 
-
     def validate(self, attrs):
         """Check if confirmation code for given username is valid."""
         username = attrs.get('username')
@@ -106,18 +107,3 @@ class JwtTokenSerializer(serializers.Serializer):
                 'Пользователя с такими данными не найдено!',
             )
         return username
-
-
-class UserCreatedByAdminSerializer(serializers.Serializer):
-    
-    email = serializers.EmailField()
-    username = serializers.RegexField(regex=r'^[\w.@+-]+')
-
-    def validate(self, attrs):
-        username = attrs.get('username')
-        email = attrs.get('email')
-        try:
-            user = User.objects.get(username=username, email=email)
-        except User.DoesNotExist:
-            raise ValidationError404()
-        return attrs

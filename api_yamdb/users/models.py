@@ -1,5 +1,3 @@
-from enum import Enum
-from random import choices
 import uuid
 
 from django.contrib.auth.models import AbstractUser
