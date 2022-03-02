@@ -67,6 +67,7 @@ class ConfirmationCodeSerializer(serializers.Serializer):
 class ValidationError404(APIException):
     """Custom error for returning NOT_FOUND response."""
     status_code = status.HTTP_404_NOT_FOUND
+    default_detail = 'Пользователя с такими данными не найдено!'
 
 
 class JwtTokenSerializer(serializers.Serializer):
@@ -105,3 +106,18 @@ class JwtTokenSerializer(serializers.Serializer):
                 'Пользователя с такими данными не найдено!',
             )
         return username
+
+
+class UserCreatedByAdminSerializer(serializers.Serializer):
+    
+    email = serializers.EmailField()
+    username = serializers.RegexField(regex=r'^[\w.@+-]+')
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        email = attrs.get('email')
+        try:
+            user = User.objects.get(username=username, email=email)
+        except User.DoesNotExist:
+            raise ValidationError404()
+        return attrs
