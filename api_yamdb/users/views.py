@@ -115,6 +115,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
                 User, username=username, confirmation_code=code,
             )
             token = RefreshToken.for_user(user)
+            user.is_active = True
             return Response(
                 data={'access': str(token.access_token)},
                 status=status.HTTP_200_OK,

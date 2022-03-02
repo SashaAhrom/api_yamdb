@@ -7,6 +7,7 @@ from django.db import models
 
 
 class User(AbstractUser):
+    """Custom User model."""
 
     USER = 'user'
     MODERATOR = 'moderator'
@@ -41,3 +42,8 @@ class User(AbstractUser):
 
     def __str__(self) -> str:
         return self.username
+
+    class Meta:
+
+        verbose_name = 'пользователь'
+        verbose_name_plural = 'пользователи'
