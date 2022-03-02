@@ -36,6 +36,7 @@ class User(AbstractUser):
         unique=True,
         default=uuid.uuid4,
         editable=False,
+        auto_created=True,
     )
 
     def __str__(self) -> str:
