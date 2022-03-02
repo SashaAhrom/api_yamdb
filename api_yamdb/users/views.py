@@ -1,12 +1,10 @@
 from django.core.mail import EmailMessage
 from django.shortcuts import get_object_or_404
-from rest_framework import mixins, status, viewsets, filters
+from rest_framework import status, viewsets, filters
 from rest_framework.decorators import action
-from rest_framework.generics import GenericAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
