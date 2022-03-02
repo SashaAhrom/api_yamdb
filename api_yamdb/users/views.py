@@ -15,16 +15,7 @@ from .serializers import (ConfirmationCodeSerializer, JwtTokenSerializer,
                           UserSerializer, AdminSerializer)
 
 
-class CreateDestroyListRetrieveViewSet(mixins.CreateModelMixin,
-                                       mixins.DestroyModelMixin,
-                                       mixins.ListModelMixin,
-                                       mixins.RetrieveModelMixin,
-                                       mixins.UpdateModelMixin,
-                                       viewsets.GenericViewSet):
-    pass
-
-
-class UserViewSet(CreateDestroyListRetrieveViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = AdminSerializer
     permission_classes = (IsAdmin,)
@@ -85,32 +76,9 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
     @action(methods=['post'], detail=False, url_path='token', url_name='token')
     def get_jwt_token(self, request):
         serializer = JwtTokenSerializer(data=request.data)
-        # username = serializer.initial_data.get('username')
-        # if not username or not User.objects.filter(username=username).exists():
-        #     return Response(
-        #         serializer.initial_data, status=status.HTTP_404_NOT_FOUND,
-        #     )
-        # try:
-        #     valid = serializer.is_valid(raise_exception=True)
-        # except User.DoesNotExist:
-        #     return Response(
-        #         serializer.data, status=status.HTTP_404_NOT_FOUND,
-        #     )
-
         if serializer.is_valid(raise_exception=True):
             username = serializer.validated_data.get('username')
             code = serializer.validated_data.get('confirmation_code')
-            # user = get_object_or_404(
-            #     User, username=username, confirmation_code=code,
-            # )
-            # try:
-            #     user = User.objects.get(
-            #         username=username, confirmation_code=code,
-            #     )
-            # except User.DoesNotExist:
-            #     return Response(
-            #         serializer.data, status=status.HTTP_409_CONFLICT,
-            #     )
             user = get_object_or_404(
                 User, username=username, confirmation_code=code,
             )
