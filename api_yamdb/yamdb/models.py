@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 
 from api_yamdb.settings import REGEX_CATEGORY
+from users.models import User
 
 
 class CATEGORIES(models.Model):
@@ -50,6 +51,20 @@ class TITLES(models.Model):
         return self.name
 
 
+class Score(models.Model):
+    """"""
+    title = models.ForeignKey(
+        TITLES,
+        on_delete=models.CASCADE(),
+        verbose_name='name of title',
+        related_name='score'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='author',
+        related_name='author_posts')
+
 class Review(models.Model):
     """"""
     title = models.ForeignKey(
@@ -58,3 +73,11 @@ class Review(models.Model):
         verbose_name='name of title',
         related_name='review'
     )
+    text = models.CharField('review of title', required=True,
+                            verbose_name='Название Произведения')
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='author',
+        related_name='author_posts')
+    score =
