@@ -48,3 +48,13 @@ class TITLES(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Review(models.Model):
+    """"""
+    title = models.ForeignKey(
+        TITLES,
+        on_delete=models.CASCADE(),
+        verbose_name='name of title',
+        related_name='review'
+    )

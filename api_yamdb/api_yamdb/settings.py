@@ -13,7 +13,7 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'api.apps.ApiConfig',
     'users.apps.UsersConfig',
-    'review.apps.ReviewConfig',
+    'yamdb.apps.YamdbConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
