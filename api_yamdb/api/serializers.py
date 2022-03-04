@@ -7,7 +7,7 @@ from review.models import Comment, Review, TITLES, User
 
 
 class ReviewGetSerializer(serializers.ModelSerializer):
-
+    """Serializer for reiding and get AVG."""
     author = SlugRelatedField(
         read_only=True,
         slug_field='username',
@@ -19,13 +19,14 @@ class ReviewGetSerializer(serializers.ModelSerializer):
         model = Review
 
     def get_score(self, obj):
-
         title_id = self.context.get('view').kwargs.get('title_id')
-        av = Review.objects.filter(title=title_id).aggregate(Avg('score')).get('score__avg')
+        av = Review.objects.filter(title=title_id).aggregate(
+            Avg('score')).get('score__avg')
         return av
 
 
 class ReviewPostSerializer(serializers.ModelSerializer):
+    """Serializer for writing."""
     author = SlugRelatedField(
         read_only=True,
         slug_field='username')
@@ -51,6 +52,7 @@ class ReviewPostSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Serializer for comments."""
     author = SlugRelatedField(
         read_only=True,
         slug_field='username')
