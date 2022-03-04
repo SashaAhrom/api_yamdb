@@ -11,9 +11,7 @@ ALLOWED_HOSTS = ['*']
 
 
 INSTALLED_APPS = [
-    'api.apps.ApiConfig',
     'users.apps.UsersConfig',
-    'review.apps.ReviewConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -22,6 +20,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'djoser',
+    'api.apps.ApiConfig',
+    'review.apps.ReviewConfig',
 ]
 
 MIDDLEWARE = [

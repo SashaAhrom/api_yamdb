@@ -35,6 +35,7 @@ class TITLES(models.Model):
     genre = models.ManyToManyField(
         GENRES,
         related_name='genre',
+        blank=True,
     )
     category = models.ForeignKey(
         CATEGORIES,
@@ -48,38 +49,13 @@ class TITLES(models.Model):
         return self.name
 
 
-class Score(models.Model):
-    """"""
-    title = models.ForeignKey(
-        TITLES,
-        on_delete=models.CASCADE,
-        verbose_name='name of title',
-        related_name='score'
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='author',
-        related_name='score')
-    score_title = models.IntegerField(verbose_name='score',
-                                      validators=[MinValueValidator(1),
-                                                  MaxValueValidator(10)])
-
-    class Meta:
-        db_table = 'scores'
-        constraints = [
-            models.UniqueConstraint(fields=['author', 'title'],
-                                    name='unique score')
-        ]
-
-
 class Review(models.Model):
-    """"""
+    """Reviews for titles."""
     title = models.ForeignKey(
         TITLES,
         on_delete=models.CASCADE,
         verbose_name='name of title',
-        related_name='review'
+        related_name='review_title'
     )
     text = models.TextField('review of title')
     author = models.ForeignKey(
@@ -87,10 +63,40 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         verbose_name='author',
         related_name='author_posts')
-    score = models.ForeignKey(Score,
-                              on_delete=models.SET_NULL,
-                              verbose_name='score of title',
-                              related_name='score',
-                              blank=True,
-                              null=True)
+    score = models.SmallIntegerField(verbose_name='score',
+                                     validators=[MaxValueValidator(10),
+                                                 MinValueValidator(1)])
     pub_date = models.DateTimeField('year of writing', auto_now_add=True)
+
+    class Meta:
+        db_table = 'review for title'
+        constraints = [
+            models.UniqueConstraint(fields=['author', 'title'],
+                                    name='unique score')
+        ]
+
+    def __str__(self):
+        return self.text[:15]
+
+
+class Comment(models.Model):
+    """Comments on reviews."""
+    review_id = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        verbose_name='name of review',
+        related_name='review_comment'
+    )
+    text = models.TextField('comment on review')
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='author',
+        related_name='author_comment')
+    pub_date = models.DateTimeField('year of writing', auto_now_add=True)
+
+    class Meta:
+        db_table = 'comment on review'
+
+    def __str__(self):
+        return self.text[:15]
