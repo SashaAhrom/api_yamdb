@@ -1,49 +1,53 @@
+
+import datetime as dt
+
 from django.db import models
 from django.core.validators import RegexValidator
+from django.core.validators import MaxValueValidator
 
 from api_yamdb.settings import REGEX_CATEGORY
 
 
-class CATEGORIES(models.Model):
+class Categories(models.Model):
     CATEGORY_VALIDATOR = RegexValidator(REGEX_CATEGORY,
                                         'Введены неправильные знаки!')
-    name = models.CharField(required=True, max_length=256, unique=True,
+    name = models.CharField(max_length=256,
                             verbose_name='Категория')
-    slug = models.SlugField(unique=True, max_length=50,
+    slug = models.SlugField(max_length=50,
                             validators=(CATEGORY_VALIDATOR,),
-                            required=True)
+                            )
 
     def __str__(self):
         return self.name
 
 
-class GENRES(models.Model):
-    name = models.CharField(required=False, verbose_name='Жанр')
-    slug = models.SlugField(unique=True)
+class Genres(models.Model):
+    name = models.CharField(max_length=30,
+                            verbose_name='Жанр')
+    slug = models.SlugField(max_length=50)
 
     def __str__(self):
-        return self.slug
+        return self.name
 
 
-class TITLES(models.Model):
-    name = models.CharField(required=True,
+class Titles(models.Model):
+    name = models.CharField(max_length=256,
                             verbose_name='Название Произведения')
-    year = models.IntegerField(required=True)
+    year = models.IntegerField(
+        validators=[MaxValueValidator(dt.datetime.now().year)])
     description = models.TextField(
         max_length=200,
         blank=True
     )
     genre = models.ManyToManyField(
-        GENRES,
-        required=True,
+        Genres,
         related_name='genre',
-        on_delete=models.SET_NULL
     )
     category = models.ForeignKey(
-        CATEGORIES,
+        Categories,
         on_delete=models.SET_NULL,
-        required=True,
-        related_name='category'
+        related_name='category',
+        null=True
     )
 
     def __str__(self):

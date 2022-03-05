@@ -33,7 +33,6 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         View for users/me. Allows any authenticated user access and
         patch it's profile.
-
         """
         user = User.objects.get(username=request.user.username)
         if request.method == 'GET':
@@ -82,7 +81,6 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         """
         View for signing up new user. If user was already created
         sends new email with confirmation code.
-
         """
         try:
             user = User.objects.get(
