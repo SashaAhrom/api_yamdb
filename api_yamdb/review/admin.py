@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 
-from .models import TITLES, Review
+from .models import Comment, TITLES, Review
 
 
 @admin.register(TITLES)
@@ -17,7 +17,7 @@ class TITLESAdmin(admin.ModelAdmin):
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    """Сustom admin panel for Post."""
+    """Custom admin panel for Review."""
     list_display = (
         'pk',
         'title',
@@ -26,3 +26,21 @@ class ReviewAdmin(admin.ModelAdmin):
         'score',
         'pub_date'
     )
+    search_fields = ('text',)
+    list_filter = ('pub_date',)
+    empty_value_display = settings.EMPTY_VALUE_DISPLAY
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    """Custom admin panel for comment."""
+    list_display = (
+        'pk',
+        'review_id',
+        'text',
+        'author',
+        'pub_date'
+    )
+    search_fields = ('text',)
+    list_filter = ('pub_date',)
+    empty_value_display = settings.EMPTY_VALUE_DISPLAY

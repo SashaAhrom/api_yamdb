@@ -1,5 +1,20 @@
+from django.conf import settings
 from django.contrib import admin
 
 from .models import User
 
-admin.site.register(User)
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    """Custom admin panel for user."""
+    list_display = (
+        'pk',
+        'email',
+        'first_name',
+        'bio',
+        'role',
+        'confirmation_code'
+    )
+    search_fields = ('first_name', 'email')
+    list_filter = ('role',)
+    empty_value_display = settings.EMPTY_VALUE_DISPLAY
