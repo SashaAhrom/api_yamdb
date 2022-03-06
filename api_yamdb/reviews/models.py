@@ -1,22 +1,25 @@
-
 import datetime as dt
 
 from django.db import models
-from django.core.validators import RegexValidator
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.conf import settings
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    RegexValidator)
 
-from api_yamdb.settings import REGEX_CATEGORY
 from users.models import User
 
 
 class Categories(models.Model):
-    CATEGORY_VALIDATOR = RegexValidator(REGEX_CATEGORY,
+    CATEGORY_VALIDATOR = RegexValidator(settings.REGEX_CATEGORY,
                                         'Введены неправильные знаки!')
     name = models.CharField(max_length=256,
                             verbose_name='Категория')
     slug = models.SlugField(max_length=50,
                             validators=(CATEGORY_VALIDATOR,),
                             )
+
+    class Meta:
+        ordering = ('name',)
+        db_table = 'category'
 
     def __str__(self):
         return self.name
@@ -26,6 +29,10 @@ class Genres(models.Model):
     name = models.CharField(max_length=30,
                             verbose_name='Жанр')
     slug = models.SlugField(max_length=50)
+
+    class Meta:
+        ordering = ('name',)
+        db_table = 'genre'
 
     def __str__(self):
         return self.name
@@ -51,6 +58,10 @@ class Title(models.Model):
         null=True
     )
 
+    class Meta:
+        ordering = ('name',)
+        db_table = 'title'
+
     def __str__(self):
         return self.name
 
@@ -75,6 +86,7 @@ class Review(models.Model):
     pub_date = models.DateTimeField('year of writing', auto_now_add=True)
 
     class Meta:
+        ordering = ('pub_date',)
         db_table = 'review for title'
         constraints = [
             models.UniqueConstraint(fields=['author', 'title'],
@@ -102,6 +114,7 @@ class Comment(models.Model):
     pub_date = models.DateTimeField('year of writing', auto_now_add=True)
 
     class Meta:
+        ordering = ('pub_date',)
         db_table = 'comment on review'
 
     def __str__(self):
