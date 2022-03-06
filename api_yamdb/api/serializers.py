@@ -1,14 +1,16 @@
 import datetime as dt
 
+from django.conf import settings
 from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.exceptions import APIException
 from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
-from api_yamdb.settings import REGEX_CATEGORY
-from users.models import User
 from reviews.models import Categories, Comment, Genres, Review, Title
+from users.models import User
+from users.tokens import ConfirmationCodeTokenGenerator
 
 
 class AdminSerializer(serializers.ModelSerializer):
@@ -80,8 +82,8 @@ class ValidationError404(APIException):
 class JwtTokenSerializer(serializers.Serializer):
     """Serializer for handling jwt token aquisition."""
 
-    username = serializers.CharField(required=True)
-    confirmation_code = serializers.UUIDField(required=True)
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
 
     def is_valid(self, raise_exception=False):
         """Custom check if validation error with specific message is raised."""
@@ -95,13 +97,12 @@ class JwtTokenSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         """Check if confirmation code for given username is valid."""
-        username = attrs.get('username')
+        token_generator = ConfirmationCodeTokenGenerator()
+        user = get_object_or_404(User, username=attrs.get('username'))
         confirmation_code = attrs.get('confirmation_code')
-        if not User.objects.filter(
-                username=username, confirmation_code=confirmation_code,
-        ).exists():
-            raise ValidationError404(
-                'Пользователя с такими данными не найдено!',
+        if not token_generator.check_token(user, confirmation_code):
+            raise serializers.ValidationError(
+                'Ваш код подтверждения неверен или устарел!',
             )
         return attrs
 
@@ -109,15 +110,16 @@ class JwtTokenSerializer(serializers.Serializer):
         """Checks if user with given username exists."""
         if not User.objects.filter(username=username).exists():
             raise ValidationError404(
-                'Пользователя с такими данными не найдено!',
+                'Пользователя с таким именем не найдено!',
             )
         return username
 
 
 class CategoriesSerializer(serializers.ModelSerializer):
+    """Serializer for categories."""
     count = serializers.IntegerField(read_only=True,
                                      source='categories.count')
-    slug = serializers.RegexField(regex=REGEX_CATEGORY,
+    slug = serializers.RegexField(regex=settings.REGEX_CATEGORY,
                                   validators=[UniqueValidator(
                                       queryset=Categories.objects.all())])
 
@@ -128,6 +130,7 @@ class CategoriesSerializer(serializers.ModelSerializer):
 
 
 class GenresSerializer(serializers.ModelSerializer):
+    """Serializer for genres."""
     count = serializers.IntegerField(read_only=True,
                                      source='genres.count')
     slug = serializers.CharField(validators=[UniqueValidator(
@@ -139,6 +142,7 @@ class GenresSerializer(serializers.ModelSerializer):
 
 
 class TitleListSerializer(serializers.ModelSerializer):
+    """Reading from title and subjet rating."""
     genre = GenresSerializer(many=True, read_only=True)
     category = CategoriesSerializer(read_only=True)
     count = serializers.IntegerField(read_only=True)
@@ -151,13 +155,12 @@ class TitleListSerializer(serializers.ModelSerializer):
 
     def get_rating(self, obj):
         title_id = self.context.get('view').kwargs.get('pk')
-        print(self.context.get('view').kwargs)
-        av = Review.objects.filter(title=title_id).aggregate(
+        return Review.objects.filter(title=title_id).aggregate(
             Avg('score')).get('score__avg')
-        return av
 
 
 class TitleWriteSerializer(serializers.ModelSerializer):
+    """Recording in title."""
     genre = serializers.SlugRelatedField(
         slug_field='slug', many=True, queryset=Genres.objects.all()
     )
@@ -176,18 +179,6 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         return value
 
 
-class ReviewGetSerializer(serializers.ModelSerializer):
-    """Serializer for reiding and get AVG."""
-    author = SlugRelatedField(
-        read_only=True,
-        slug_field='username')
-
-
-    class Meta:
-        fields = ('id', 'text', 'author',  'score', 'pub_date')
-        model = Review
-
-
 class CurrentTitleDefault:
     """
     May be applied as a `default=...` value on a serializer field.
@@ -196,26 +187,19 @@ class CurrentTitleDefault:
     requires_context = True
 
     def __call__(self, serializer_field):
-        print(serializer_field.context.get('view').kwargs.get('title_id'))
         return serializer_field.context.get('view').kwargs.get('title_id')
 
 
-class TypeDefault(object):
-    def set_context(self, serializer_field):
-        view = serializer_field.context['view']
-
-        self.type = view.kwargs['title_id'].upper()
-
-    def __call__(self):
-        return self.type
-
-class ReviewPostSerializer(serializers.ModelSerializer):
-    """Serializer for writing."""
+class ReviewSerializer(serializers.ModelSerializer):
+    """
+    Serializer for review and it is forbidden
+    to leave more than one review.
+    """
     author = SlugRelatedField(
         read_only=True,
         slug_field='username',
         default=serializers.CurrentUserDefault())
-    title = serializers.HiddenField(default=TypeDefault())
+    title = serializers.HiddenField(default=CurrentTitleDefault())
 
     class Meta:
         fields = ('id', 'title', 'text', 'author', 'score', 'pub_date')
@@ -224,7 +208,7 @@ class ReviewPostSerializer(serializers.ModelSerializer):
     def validate_score(self, value):
         if 1 <= value <= 10:
             return value
-        raise serializers.ValidationError('Значение должно быть в интервале от 1 до 10!')
+        raise serializers.ValidationError('Значение в интервале от 1 до 10!')
 
     validators = (
         UniqueTogetherValidator(

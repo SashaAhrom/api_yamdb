@@ -1,5 +1,3 @@
-import uuid
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -15,6 +13,7 @@ class User(AbstractUser):
         (MODERATOR, 'Модератор'),
         (ADMIN, 'Администратор'),
     )
+
     email = models.EmailField(
         verbose_name='электронная почта',
         max_length=254,
@@ -28,14 +27,7 @@ class User(AbstractUser):
         verbose_name='права доступа',
         choices=ROLES_CHOICES,
         default=USER,
-        max_length=3,
-    )
-    confirmation_code = models.UUIDField(
-        verbose_name='код подтверждения',
-        unique=True,
-        default=uuid.uuid4,
-        editable=False,
-        auto_created=True,
+        max_length=9,
     )
 
     def __str__(self) -> str:

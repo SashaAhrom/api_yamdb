@@ -13,7 +13,6 @@ class UserAdmin(admin.ModelAdmin):
         'first_name',
         'bio',
         'role',
-        'confirmation_code'
     )
     search_fields = ('first_name', 'email')
     list_filter = ('role',)

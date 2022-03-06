@@ -1,30 +1,31 @@
 from django.core.mail import EmailMessage
-from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
+from rest_framework.pagination import (LimitOffsetPagination,
+                                       PageNumberPagination)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-
-from users.models import User
 from reviews.models import Categories, Genres, Review, Title
+from users.models import User
+from users.tokens import ConfirmationCodeTokenGenerator
 from .filters import TitlesFilter
-from .permissions import IsAdmin, IsAdminUserOrReadOnly, IsAuthorOrReadOnlyPermission
+from .permissions import (IsAdmin, IsAdminUserOrReadOnly,
+                          IsAuthorOrReadOnlyPermission)
 from .serializers import (AdminSerializer, CategoriesSerializer,
-                          ConfirmationCodeSerializer,
-                          CommentSerializer, GenresSerializer,
-                          JwtTokenSerializer, ReviewGetSerializer,
-                          ReviewPostSerializer, TitleListSerializer,
+                          CommentSerializer, ConfirmationCodeSerializer,
+                          GenresSerializer, JwtTokenSerializer,
+                          ReviewSerializer, TitleListSerializer,
                           TitleWriteSerializer, UserSerializer)
 
 
 class UserViewSet(viewsets.ModelViewSet):
     """Viewset for users/."""
 
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('id')
     serializer_class = AdminSerializer
     permission_classes = (IsAdmin,)
     lookup_field = 'username'
@@ -41,7 +42,6 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         View for users/me. Allows any authenticated user access and
         patch it's profile.
-
         """
         user = User.objects.get(username=request.user.username)
         if request.method == 'GET':
@@ -67,17 +67,19 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
 
     def send_email(self, user: User):
         """Sends confirmation code to user."""
+        token_generator = ConfirmationCodeTokenGenerator()
         subject = 'Код подтвеждения'
         body = '''
-        Ваш код для авторизации на сайте YaMDB: {code}
+        Ваш код для авторизации на сайте YaMDB: {confirmation_code}
         Ваше имя пользователя: {username}'''
         from_email = 'noreply@yamdb.ru'
-        code = user.confirmation_code
         email = user.email
         username = user.username
+        confirmation_code = token_generator.make_token(user)
         confirmation_email = EmailMessage(
             subject=subject,
-            body=body.format(code=code, username=username),
+            body=body.format(
+                confirmation_code=confirmation_code, username=username),
             from_email=from_email,
             to=[email],
         )
@@ -90,7 +92,6 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         """
         View for signing up new user. If user was already created
         sends new email with confirmation code.
-
         """
         try:
             user = User.objects.get(
@@ -120,10 +121,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             username = serializer.validated_data.get('username')
-            code = serializer.validated_data.get('confirmation_code')
-            user = get_object_or_404(
-                User, username=username, confirmation_code=code,
-            )
+            user = get_object_or_404(User, username=username)
             token = RefreshToken.for_user(user)
             return Response(
                 data={'access': str(token.access_token)},
@@ -152,7 +150,6 @@ class GenresViewSet(viewsets.ModelViewSet):
     queryset = Genres.objects.all()
     serializer_class = GenresSerializer
     permission_classes = (IsAdminUserOrReadOnly,)
-    # lookup_field = 'name'
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -181,22 +178,19 @@ class TitlesViewSet(viewsets.ModelViewSet):
             return TitleListSerializer
         return TitleWriteSerializer
 
+
 class ReviewViewSet(viewsets.ModelViewSet):
     """
     Api endpoint has access to SAFE_METHODS
     without registering.
     """
+    serializer_class = ReviewSerializer
     permission_classes = (IsAuthorOrReadOnlyPermission,)
 
     def get_queryset(self):
         title_id = self.kwargs.get("title_id")
         title = get_object_or_404(Title, pk=title_id)
         return title.review_title.all()
-
-    def get_serializer_class(self):
-        if self.request.method == 'GET':
-            return ReviewGetSerializer
-        return ReviewPostSerializer
 
     def perform_create(self, serializer):
         title_id = self.kwargs.get('title_id')
