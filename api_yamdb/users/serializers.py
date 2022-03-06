@@ -1,9 +1,10 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.exceptions import APIException
 from rest_framework.validators import UniqueValidator
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 from .models import User
+from .tokens import ConfirmationCodeTokenGenerator
 
 
 class AdminSerializer(serializers.ModelSerializer):
@@ -34,7 +35,7 @@ class AdminSerializer(serializers.ModelSerializer):
                 'Пожалуйста, выберите другое имя пользователя.',
             )
         return username
-    
+
 
 class UserSerializer(AdminSerializer):
     """Serializer for users/me view."""
@@ -75,8 +76,8 @@ class ValidationError404(APIException):
 class JwtTokenSerializer(serializers.Serializer):
     """Serializer for handling jwt token aquisition."""
 
-    username = serializers.CharField(required=True)
-    confirmation_code = serializers.UUIDField(required=True)
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
 
     def is_valid(self, raise_exception=False):
         """Custom check if validation error with specific message is raised."""
@@ -90,13 +91,12 @@ class JwtTokenSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         """Check if confirmation code for given username is valid."""
-        username = attrs.get('username')
+        token_generator = ConfirmationCodeTokenGenerator()
+        user = get_object_or_404(User, username=attrs.get('username'))
         confirmation_code = attrs.get('confirmation_code')
-        if not User.objects.filter(
-            username=username, confirmation_code=confirmation_code,
-        ).exists():
-            raise ValidationError404(
-                'Пользователя с такими данными не найдено!',
+        if not token_generator.check_token(user, confirmation_code):
+            raise serializers.ValidationError(
+                'Ваш код подтверждения неверен или устарел!',
             )
         return attrs
 
@@ -104,6 +104,6 @@ class JwtTokenSerializer(serializers.Serializer):
         """Checks if user with given username exists."""
         if not User.objects.filter(username=username).exists():
             raise ValidationError404(
-                'Пользователя с такими данными не найдено!',
+                'Пользователя с таким именем не найдено!',
             )
         return username

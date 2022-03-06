@@ -7,16 +7,18 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
+
 from .models import User
 from .permissions import IsAdmin
 from .serializers import (AdminSerializer, ConfirmationCodeSerializer,
                           JwtTokenSerializer, UserSerializer)
+from .tokens import ConfirmationCodeTokenGenerator
 
 
 class UserViewSet(viewsets.ModelViewSet):
     """Viewset for users/."""
 
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('id')
     serializer_class = AdminSerializer
     permission_classes = (IsAdmin,)
     lookup_field = 'username'
@@ -58,17 +60,19 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
 
     def send_email(self, user: User):
         """Sends confirmation code to user."""
+        token_generator = ConfirmationCodeTokenGenerator()
         subject = 'Код подтвеждения'
         body = '''
-        Ваш код для авторизации на сайте YaMDB: {code}
+        Ваш код для авторизации на сайте YaMDB: {confirmation_code}
         Ваше имя пользователя: {username}'''
         from_email = 'noreply@yamdb.ru'
-        code = user.confirmation_code
         email = user.email
         username = user.username
+        confirmation_code = token_generator.make_token(user)
         confirmation_email = EmailMessage(
             subject=subject,
-            body=body.format(code=code, username=username),
+            body=body.format(
+                confirmation_code=confirmation_code, username=username),
             from_email=from_email,
             to=[email],
         )
@@ -110,10 +114,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             username = serializer.validated_data.get('username')
-            code = serializer.validated_data.get('confirmation_code')
-            user = get_object_or_404(
-                User, username=username, confirmation_code=code,
-            )
+            user = get_object_or_404(User, username=username)
             token = RefreshToken.for_user(user)
             return Response(
                 data={'access': str(token.access_token)},
