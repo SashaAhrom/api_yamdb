@@ -1,5 +1,3 @@
-import datetime as dt
-
 from django.db import models
 from django.conf import settings
 from django.core.validators import (MaxValueValidator, MinValueValidator,
@@ -13,9 +11,7 @@ class Categories(models.Model):
                                         'Введены неправильные знаки!')
     name = models.CharField(max_length=256,
                             verbose_name='Категория')
-    slug = models.SlugField(max_length=50,
-                            validators=(CATEGORY_VALIDATOR,),
-                            )
+    slug = models.SlugField(validators=(CATEGORY_VALIDATOR,))
 
     class Meta:
         ordering = ('name',)
@@ -28,7 +24,7 @@ class Categories(models.Model):
 class Genres(models.Model):
     name = models.CharField(max_length=30,
                             verbose_name='Жанр')
-    slug = models.SlugField(max_length=50)
+    slug = models.SlugField()
 
     class Meta:
         ordering = ('name',)
@@ -41,8 +37,7 @@ class Genres(models.Model):
 class Title(models.Model):
     name = models.CharField(max_length=256,
                             verbose_name='Название Произведения')
-    year = models.IntegerField(
-        validators=[MaxValueValidator(dt.datetime.now().year)])
+    year = models.IntegerField('year of writing')
     description = models.TextField(
         max_length=200,
         blank=True
@@ -80,18 +75,20 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         verbose_name='author',
         related_name='author_posts')
-    score = models.SmallIntegerField(verbose_name='score',
-                                     validators=[MaxValueValidator(10),
-                                                 MinValueValidator(1)])
+    score = models.SmallIntegerField(
+        verbose_name='score',
+        validators=[MaxValueValidator(10, 'Value less or equal 10'),
+                    MinValueValidator(1, 'Value more or equal 1')]
+    )
     pub_date = models.DateTimeField('year of writing', auto_now_add=True)
 
     class Meta:
         ordering = ('pub_date',)
         db_table = 'review for title'
-        constraints = [
-            models.UniqueConstraint(fields=['author', 'title'],
-                                    name='unique_score')
-        ]
+        constraints = (
+            models.UniqueConstraint(fields=('author', 'title'),
+                                    name='unique_score'),
+        )
 
     def __str__(self):
         return self.text[:15]

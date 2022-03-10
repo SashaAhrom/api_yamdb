@@ -16,10 +16,8 @@ router_v1.register('users', UserViewSet)
 router_v1.register('categories', CategoryViewSet)
 router_v1.register('genres', GenresViewSet)
 router_v1.register('titles', TitlesViewSet, basename='titles')
-router_v1.register(
-    'auth', AuthenticationViewSet, basename='get_confirmation_code',
-)
-
+router_v1.register('auth', AuthenticationViewSet,
+                   basename='get_confirmation_code')
 
 urlpatterns = [
     path('v1/', include('djoser.urls.jwt')),

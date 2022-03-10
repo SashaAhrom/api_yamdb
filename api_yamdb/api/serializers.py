@@ -208,7 +208,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     def validate_score(self, value):
         if 1 <= value <= 10:
             return value
-        raise serializers.ValidationError('Значение в интервале от 1 до 10!')
+        raise serializers.ValidationError('Value between 1 and 10!')
 
     validators = (
         UniqueTogetherValidator(
