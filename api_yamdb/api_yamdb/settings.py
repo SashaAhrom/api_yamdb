@@ -7,11 +7,11 @@ load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = os.getenv('KEY_API')
+SECRET_KEY = os.environ.get('KEY_API', '1')
 
 DEBUG = False
 
-ALLOWED_HOSTS = os.getenv('HOSTS')
+ALLOWED_HOSTS = os.environ.get('HOSTS', [])
 
 
 INSTALLED_APPS = [
