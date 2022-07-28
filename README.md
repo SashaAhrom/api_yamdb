@@ -34,7 +34,7 @@ Django 2.2.19
 Djangorestframework 3.12.4
 ```
 ## The authors
-Aliaksandr Akhromenka
-Valentin Nemanov
-Igor Ryabov
+- Aliaksandr Akhromenka
+- Valentin Nemanov
+- Igor Ryabov
 
